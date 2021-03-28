@@ -1,3 +1,6 @@
+import random
+
+
 class TradingAlgorithms:
 
     # Get the average value of a list
@@ -5,30 +8,42 @@ class TradingAlgorithms:
     def __list_avg__(in_list):
         return sum(in_list) / len(in_list) if len(in_list) > 0 else 0
 
-    """
-    Purpose:
-        - Performs the mean reversion algorithm on a stock using a 5 day
-        moving average
-    Inputs:
-        - prices: a list of prices to run the method on
-        - log_buy_sell: prints to the console what price you bought and sold with
-                        default=False
-        - log_res: whether to print all buys and sells to the console
-                   default=True
-    Returns:
-        - profit: The total profit made using this strategy
-        - return_percentage: The percentage gain or loss using this strategy
-    """
+    @staticmethod
+    def random_day_range(prices, min_range=1):
+        """
+        Purpose:
+            - Selects a random range of days from a list of stock prices
+        """
+        start = random.randint(0, len(prices) - 1 - min_range)
+        end = random.randint(start + min_range, len(prices) - 1)
+        return prices[start:end]
 
     @staticmethod
-    def mean_reversion(prices, days=5, percent_diff=5, log_buy_sell=False, log_res=False):
+    def mean_reversion(
+        prices, days=5, percent_diff=5, log_buy_sell=False, log_res=False
+    ):
+        """
+        Purpose:
+            - Performs the mean reversion algorithm on a stock using a 5 day
+            moving average
+        Inputs:
+            - prices: a list of prices to run the method on
+            - log_buy_sell: prints to the console what price you bought and sold with
+                            default=False
+            - log_res: whether to print all buys and sells to the console
+                    default=True
+        Returns:
+            - profit: The total profit made using this strategy
+            - return_percentage: The percentage gain or loss using this strategy
+        """
+
         # Initialize values before the loop
         working_list = []
         prev_avg = 0
         profit = 0
         last_buy = None
         first_buy = None
-        diff = percent_diff * .01  # we want it in a decimal percent
+        diff = percent_diff * 0.01  # we want it in a decimal percent
 
         # Loop through each line in the file
         for price in prices:
@@ -71,23 +86,95 @@ class TradingAlgorithms:
 
         return profit, return_percentage
 
-    """
-    Purpose:
-        - Performs the mean reversion algorithm on a stock using a 5 day
-        moving average
-    Inputs:
-        - prices: a list of prices to run the method on
-        - log_buy_sell: prints to the console what price you bought and sold with
-                        default=False
-        - log_res: whether to print all buys and sells to the console
-                   default=True
-    Returns:
-        - total_profit: The total profit made using this strategy
-        - final_percentage: The percentage gain or loss using this strategy
-    """
+    @staticmethod
+    def mean_reversion_best_settings(
+        prices,
+        num_best=5,
+        day_range=range(1, 10),
+        diff_range=range(-10, 10),
+        data_splits=0,
+    ):
+        """
+        Purpose: Find the best settings for the mean reversion
+        Inputs:
+            - prices: The price list to run the mean reversion algorithm on
+            - num_best: The number of best settings to return (-1 to return all)
+            - day_range: A range of integers greater than 0 to test the best amount
+                of days to perform the average over
+            - diff_range: A range of percentages to try for the mean reversion; a diff
+                of +/- 10% would be represented by diff=10
+            - data_splits: How many times the data should be split and then have the
+                profits averaged. Defaults to testing as one data set
+        Returns:
+            - best_days: A list containing the best days each in order in dictionary form
+        """
+
+        def get_best_for_range(
+            prices=prices, num_best=num_best, day_range=day_range, diff_range=diff_range
+        ):
+            best_days_dict = {}
+            for days in day_range:
+                for diff in diff_range:
+                    total_profit, final_percentage = TradingAlgorithms.mean_reversion(
+                        prices, days=days, percent_diff=diff
+                    )
+
+                    best_days_dict[f"{days}_days_{diff}_diff"] = {
+                        "total_profit": total_profit,
+                        "percent_gain": final_percentage,
+                        "mvg_avg_days": days,
+                        "percent_diff": diff,
+                        "data_points": 1,
+                    }
+
+            return best_days_dict
+
+        assert data_splits >= 0
+        if data_splits > 0:
+            length = len(prices) // data_splits
+            best_days = get_best_for_range(prices[0 : length - 1])
+            for i in range(1, data_splits):
+                if i - 1 == data_splits:
+                    bd = get_best_for_range(prices[i * length :])
+                else:
+                    bd = get_best_for_range(prices[i * length : (i + 1) * length - 1])
+
+                for day in bd:
+                    best_days[day]["total_profit"] += bd[day]["total_profit"]
+                    best_days[day]["data_points"] += bd[day]["data_points"]
+
+            for day in best_days:
+                best_days[day]["percent_gain"] = (
+                    best_days[day]["total_profit"] / best_days[day]["data_points"]
+                )
+
+        else:
+            best_days = get_best_for_range(prices, num_best)
+
+        # TODO: optimize`
+        best_days_list = []
+        for day in best_days:
+            best_days_list.append(best_days[day])
+
+        return sorted(best_days_list, key=lambda day: day["total_profit"])[-num_best:]
 
     @staticmethod
     def simple_moving_average(prices, log_buy_sell=False, log_res=True):
+        """
+        Purpose:
+            - Performs the mean reversion algorithm on a stock using a 5 day
+            moving average
+        Inputs:
+            - prices: a list of prices to run the method on
+            - log_buy_sell: prints to the console what price you bought and sold with
+                            default=False
+            - log_res: whether to print all buys and sells to the console
+                    default=True
+        Returns:
+            - total_profit: The total profit made using this strategy
+            - final_percentage: The percentage gain or loss using this strategy
+        """
+
         i = 0
         buy = 0
         total_profit = 0
@@ -128,34 +215,3 @@ class TradingAlgorithms:
             print(f"Final Percentage: {round(final_percentage, 2)}%")
 
         return total_profit, final_percentage
-
-    
-    @staticmethod
-    def get_best_mr_vals(prices, num_best=5, day_range=range(1, 10), diff_range=range(-10, 10)):
-
-        best_days = []
-        for days in day_range:
-            for diff in diff_range:
-                total_profit, final_percentage = TradingAlgorithms.mean_reversion(
-                    prices, days=days, percent_diff=diff
-                )
-
-                data = {
-                    "profit": total_profit,
-                    "percent_gain": final_percentage,
-                    "mvg_avg_days": days,
-                    "percent_diff": diff
-                }
-
-                if len(best_days) < num_best:
-                    best_days.append(data)
-                    if len(best_days) == num_best:
-                        best_days.sort(key=lambda data: data["profit"])
-                else:
-                    for d in range(len(best_days)):
-                        if data["profit"] > best_days[d]["profit"]:
-                            best_days.insert(d, data)
-                            best_days.pop()
-                            break
-
-        return best_days
