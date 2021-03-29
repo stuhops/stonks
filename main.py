@@ -20,7 +20,6 @@ def float_range(start=0, stop=1, step=1):
 
 # Setup the dictionary with tickers and price lists
 tickers = {
-    # "SINT": {"file_name": "SINT.txt", "res": []},
     "SINT": {"file_name": "SINT_3_year.txt"},
 }
 

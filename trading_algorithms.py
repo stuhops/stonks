@@ -14,7 +14,12 @@ class TradingAlgorithms:
         """
         Purpose:
             - Selects a random range of days from a list of stock prices
+        Inputs:
+            - prices: A list of prices to choose from
+            - min_range: The smallest amount of data to be returned
         """
+        assert min_range <= len(prices)
+
         start = random.randint(0, len(prices) - 1 - min_range)
         end = random.randint(start + min_range, len(prices) - 1)
         return prices[start:end]
@@ -26,16 +31,20 @@ class TradingAlgorithms:
         """
         Purpose:
             - Performs the mean reversion algorithm on a stock using a 5 day
-            moving average
+              moving average
         Inputs:
             - prices: a list of prices to run the method on
+            - days: The number of days used to calculate the average
+            - percent_diff: The percent difference to compare to the mean average
+                ex: A price difference of +/- 5% would be input as percent_diff=5
             - log_buy_sell: prints to the console what price you bought and sold with
-                            default=False
+              default=False
             - log_res: whether to print all buys and sells to the console
-                    default=True
+              default=False
         Returns:
             - profit: The total profit made using this strategy
             - return_percentage: The percentage gain or loss using this strategy
+            - first_buy: The first stock price the algorithm bought in at
         """
 
         # Initialize values before the loop
@@ -111,8 +120,20 @@ class TradingAlgorithms:
         """
 
         def get_best_for_range(
-            prices=prices, num_best=num_best, day_range=day_range, diff_range=diff_range
+            prices=prices, day_range=day_range, diff_range=diff_range
         ):
+            """
+            Purpose: Run the mean reversion algorithm on a range of days and difference
+                percentages to see what the best input values are for a stock
+            Inputs:
+                - prices: The price list to run the mean reversion algorithm on
+                - day_range: A range of integers greater than 0 to test the best amount
+                    of days to perform the average over
+                - diff_range: A range of percentages to try for the mean reversion; a diff
+                    of +/- 5% would be represented by diff=5
+            Returns:
+                - best_days: A list containing the best days each in order in dictionary form
+            """
             best_days_dict = {}
             for days in day_range:
                 for diff in diff_range:
@@ -137,7 +158,10 @@ class TradingAlgorithms:
 
         def combine_results(best_days1, best_days2):
             """
-            Purpose: Combines two dictionarys of type best_days into one
+            Purpose: Combines two dictionaries of type best_days into one
+            Inputs:
+                - best_days 1 and 2: dictionaries of type best_days
+            Returns: Returns a copy of the combined best_days dictionary
             """
             best_days = copy.deepcopy(best_days1)
             for day in best_days:
@@ -177,7 +201,7 @@ class TradingAlgorithms:
 
                 best_days = combine_results(best_days, bd)
 
-        # If num_best is one then return a full dictionary instead of a list
+        # If num_best is -1 then return a full dictionary instead of a list
         if num_best == -1:
             return best_days
 
