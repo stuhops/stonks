@@ -35,10 +35,10 @@ for ticker in tickers:
 
     best_days = TradingAlgorithms.mean_reversion_best_settings(
         prices,
-        num_best=4,
+        num_best=10,
         diff_range=diff_range,
         day_range=range(1, 10),
-        data_splits=5,
+        data_splits=range(10),
     )
 
     tickers[ticker]["best_days"] = best_days

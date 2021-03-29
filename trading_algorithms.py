@@ -1,3 +1,4 @@
+import copy
 import random
 
 
@@ -134,34 +135,60 @@ class TradingAlgorithms:
 
             return best_days_dict
 
-        assert data_splits >= 0
-        if data_splits > 0:
-            length = len(prices) // data_splits
+        def combine_results(best_days1, best_days2):
+            """
+            Purpose: Combines two dictionarys of type best_days into one
+            """
+            best_days = copy.deepcopy(best_days1)
+            for day in best_days:
+                best_days[day]["total_profit"] += best_days2[day]["total_profit"]
+                best_days[day]["data_points"] += best_days2[day]["data_points"]
+                best_days[day]["percent_gain"] += best_days2[day]["percent_gain"]
+            return best_days
+
+        if type(data_splits) == range or type(data_splits) == list:
+            for num in data_splits:
+                bd = TradingAlgorithms.mean_reversion_best_settings(
+                    prices=prices,
+                    num_best=-1,
+                    day_range=day_range,
+                    diff_range=diff_range,
+                    data_splits=num,
+                )
+                if data_splits[0] == num:
+                    best_days = bd
+                else:
+                    best_days = combine_results(best_days, bd)
+
+            # Average all data because it was multiple runs of same data
+            for day in best_days:
+                best_days[day]["total_profit"] /= len(data_splits)
+                best_days[day]["percent_gain"] /= len(data_splits)
+
+        else:
+            assert data_splits >= 0
+            length = len(prices) // (data_splits + 1)
             best_days = get_best_for_range(prices[0 : length - 1])
             for i in range(1, data_splits):
-                if i - 1 == data_splits:
+                if i + 1 == data_splits:
                     bd = get_best_for_range(prices[i * length :])
                 else:
                     bd = get_best_for_range(prices[i * length : (i + 1) * length - 1])
 
-                for day in bd:
-                    best_days[day]["total_profit"] += bd[day]["total_profit"]
-                    best_days[day]["data_points"] += bd[day]["data_points"]
+                best_days = combine_results(best_days, bd)
 
-            for day in best_days:
-                best_days[day]["percent_gain"] += bd[day]["percent_gain"]
-
-        else:
-            best_days = get_best_for_range(prices, num_best)
+        # If num_best is one then return a full dictionary instead of a list
+        if num_best == -1:
+            return best_days
 
         # TODO: optimize`
         best_days_list = []
         for day in best_days:
             best_days_list.append(best_days[day])
 
-        return sorted(best_days_list, reverse=True, key=lambda day: day["total_profit"])[
-            :num_best
-        ]
+        return sorted(
+            best_days_list, reverse=True, key=lambda day: day["total_profit"]
+        )[:num_best]
 
     @staticmethod
     def simple_moving_average(prices, log_buy_sell=False, log_res=True):
