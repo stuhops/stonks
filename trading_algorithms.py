@@ -74,7 +74,7 @@ class TradingAlgorithms:
             if len(working_list) > days:
                 working_list.pop(0)
 
-        return_percentage = 100 * profit / first_buy
+        return_percentage = 100 * profit / first_buy if first_buy else 0
 
         # Print out the results
         if log_res:
@@ -84,7 +84,7 @@ class TradingAlgorithms:
             print(f"Total Profit:       {round(profit, 2)}")
             print(f"Percentage Returns: {round(return_percentage, 2)}%")
 
-        return profit, return_percentage
+        return profit, return_percentage, first_buy
 
     @staticmethod
     def mean_reversion_best_settings(
@@ -115,7 +115,11 @@ class TradingAlgorithms:
             best_days_dict = {}
             for days in day_range:
                 for diff in diff_range:
-                    total_profit, final_percentage = TradingAlgorithms.mean_reversion(
+                    (
+                        total_profit,
+                        final_percentage,
+                        starting_price,
+                    ) = TradingAlgorithms.mean_reversion(
                         prices, days=days, percent_diff=diff
                     )
 
@@ -124,6 +128,7 @@ class TradingAlgorithms:
                         "percent_gain": final_percentage,
                         "mvg_avg_days": days,
                         "percent_diff": diff,
+                        "starting_price": starting_price,
                         "data_points": 1,
                     }
 
@@ -144,9 +149,7 @@ class TradingAlgorithms:
                     best_days[day]["data_points"] += bd[day]["data_points"]
 
             for day in best_days:
-                best_days[day]["percent_gain"] = (
-                    best_days[day]["total_profit"] / best_days[day]["data_points"]
-                )
+                best_days[day]["percent_gain"] += bd[day]["percent_gain"]
 
         else:
             best_days = get_best_for_range(prices, num_best)
@@ -156,7 +159,9 @@ class TradingAlgorithms:
         for day in best_days:
             best_days_list.append(best_days[day])
 
-        return sorted(best_days_list, key=lambda day: day["total_profit"])[-num_best:]
+        return sorted(best_days_list, reverse=True, key=lambda day: day["total_profit"])[
+            :num_best
+        ]
 
     @staticmethod
     def simple_moving_average(prices, log_buy_sell=False, log_res=True):

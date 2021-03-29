@@ -1,5 +1,6 @@
 import json
 import pathlib
+import itertools
 from trading_algorithms import TradingAlgorithms
 
 # Get the parent directories path so we don't have to hardcode
@@ -23,6 +24,8 @@ tickers = {
     "SINT": {"file_name": "SINT_3_year.txt"},
 }
 
+diff_range = list(float_range(-20, 20, 0.1))
+
 for ticker in tickers:
     # Prep the data
     with open(path / tickers[ticker]["file_name"], "r") as in_file:
@@ -31,7 +34,11 @@ for ticker in tickers:
     tickers[ticker].pop("file_name")  # We don't want the file name in results
 
     best_days = TradingAlgorithms.mean_reversion_best_settings(
-        prices, num_best=4, diff_range=float_range(-20, 20, 0.1), day_range=range(1, 10)
+        prices,
+        num_best=4,
+        diff_range=diff_range,
+        day_range=range(1, 10),
+        data_splits=5,
     )
 
     tickers[ticker]["best_days"] = best_days
