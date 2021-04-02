@@ -60,9 +60,29 @@ class AlpacaTrade:
         return True
 
     @staticmethod
-    def buy(symbol, shares):
+    def market_order(symbol, shares, buy=True):
         api, account = AlpacaTrade.__authenticate__()
+        if (
+            buy and not AlpacaTrade.__check_buy__(api, account, symbol, shares, price)
+        ) or (
+            not buy
+            and not AlpacaTrade.__check_sell__(api, account, symbol, shares, price)
+        ):
+            print(
+                f"The {'buy' if buy else 'sell'} limit could not be set for {shares} shares of {symbol} at {price} per share"
+            )
+            return False
 
+        else:
+            api.submit_order(
+                symbol=symbol,
+                qty=shares,
+                side="buy" if buy else "sell",
+                type="limit",
+                time_in_force=time,
+                limit_price=price,
+            )
+            return True
         # Check if the market is open
 
         # Check we have enough money to buy
@@ -103,6 +123,7 @@ class AlpacaTrade:
                 time_in_force=time,
                 limit_price=price,
             )
+            return True
 
     @staticmethod
     def get_account():
