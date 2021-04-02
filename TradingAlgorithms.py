@@ -7,13 +7,15 @@ class TradingAlgorithms:
     # Get the average value of a list
     @staticmethod
     def __list_avg__(in_list):
+        """
+        Purpose: Find and return the average from a list
+        """
         return sum(in_list) / len(in_list) if len(in_list) > 0 else 0
 
     @staticmethod
     def random_day_range(prices, min_range=1):
         """
-        Purpose:
-            - Selects a random range of days from a list of stock prices
+        Purpose: Selects a random range of days from a list of stock prices
         Inputs:
             - prices: A list of prices to choose from
             - min_range: The smallest amount of data to be returned
