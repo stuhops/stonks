@@ -21,19 +21,20 @@ def float_range(start=0, stop=1, step=1):
 # Setup the dictionary with tickers and price lists
 tickers = {
     "SINT": {},
-    "VISL": {},
+    # "VISL": {},
 }
 
-diff_range = list(float_range(-20, 20, 0.5))
+diff_range = list(float_range(4, 6, 0.1))
 
 for ticker in tickers:
-    prices = AlpacaTrade.get_historical_data(ticker, limit=400, to_return={"c"})
+    prices = AlpacaTrade.get_historical_data(ticker, limit=3, to_return={"c"})
     best_days = MeanReversion.get_best_settings(
         prices,
-        num_best=10,
-        diff_range=diff_range,
-        day_range=range(1, 10),
-        data_splits=range(10),
+        num_best=-1,
+        diff_range=[5],
+        day_range=[3],
+        data_splits=0,
+        combine_results=False,
     )
 
     tickers[ticker]["best_days"] = best_days

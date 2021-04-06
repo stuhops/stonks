@@ -165,6 +165,8 @@ class MeanReversion(TradingAlgorithms):
         day_range=range(1, 10),
         diff_range=range(-10, 10),
         data_splits=0,
+        combine_results=True,
+        extra_label="",
     ):
         """
         Purpose: Find the best settings for the mean reversion
@@ -177,12 +179,13 @@ class MeanReversion(TradingAlgorithms):
                 of +/- 10% would be represented by diff=10
             - data_splits: How many times the data should be split and then have the
                 profits averaged. Defaults to testing as one data set
+            - extra_label: Extra label to add to the end of the dictionary key
         Returns:
             - best_days: A list containing the best days each in order in dictionary form
         """
 
         def get_best_for_range(
-            prices=prices, day_range=day_range, diff_range=diff_range
+            prices=prices, day_range=day_range, diff_range=diff_range, extra_label=""
         ):
             """
             Purpose: Run the mean reversion algorithm on a range of days and difference
@@ -193,6 +196,7 @@ class MeanReversion(TradingAlgorithms):
                     of days to perform the average over
                 - diff_range: A range of percentages to try for the mean reversion; a diff
                     of +/- 5% would be represented by diff=5
+                - extra_label: The extra label to add to the dictionary key
             Returns:
                 - best_days: A list containing the best days each in order in dictionary form
             """
@@ -207,7 +211,7 @@ class MeanReversion(TradingAlgorithms):
                         prices, days=days, percent_diff=diff
                     )
 
-                    best_days_dict[f"{days}_days_{diff}_diff"] = {
+                    best_days_dict[f"{days}_days_{diff}_diff{extra_label}"] = {
                         "total_profit": total_profit,
                         "percent_gain": final_percentage,
                         "mvg_avg_days": days,
@@ -218,7 +222,7 @@ class MeanReversion(TradingAlgorithms):
 
             return best_days_dict
 
-        def combine_results(best_days1, best_days2):
+        def _combine_results(best_days1, best_days2):
             """
             Purpose: Combines two dictionaries of type best_days into one
             Inputs:
@@ -234,17 +238,24 @@ class MeanReversion(TradingAlgorithms):
 
         if type(data_splits) == range or type(data_splits) == list:
             for num in data_splits:
+                ex_label = (
+                    extra_label + str(num) if not combine_results else extra_label
+                )
                 bd = MeanReversion.get_best_settings(
                     prices=prices,
                     num_best=-1,
                     day_range=day_range,
                     diff_range=diff_range,
                     data_splits=num,
+                    extra_label=ex_label,
+                    combine_results=combine_results,
                 )
                 if data_splits[0] == num:
                     best_days = bd
+                elif not combine_results:
+                    best_days.update(bd)
                 else:
-                    best_days = combine_results(best_days, bd)
+                    best_days = _combine_results(best_days, bd)
 
             # Average all data because it was multiple runs of same data
             for day in best_days:
@@ -254,14 +265,23 @@ class MeanReversion(TradingAlgorithms):
         else:
             assert data_splits >= 0
             length = len(prices) // (data_splits + 1)
-            best_days = get_best_for_range(prices[0 : length - 1])
+            best_days = get_best_for_range(
+                prices[0 : length - 1], extra_label=extra_label
+            )
             for i in range(1, data_splits):
-                if i + 1 == data_splits:
-                    bd = get_best_for_range(prices[i * length :])
-                else:
-                    bd = get_best_for_range(prices[i * length : (i + 1) * length - 1])
+                ex_label = extra_label + str(i) if not combine_results else extra_label
 
-                best_days = combine_results(best_days, bd)
+                if i + 1 == data_splits:
+                    bd = get_best_for_range(prices[i * length :], extra_label=ex_label)
+                else:
+                    bd = get_best_for_range(
+                        prices[i * length : (i + 1) * length - 1], extra_label=ex_label
+                    )
+
+                if combine_results:
+                    best_days = _combine_results(best_days, bd)
+                else:
+                    best_days.update(bd)
 
         # If num_best is -1 then return a full dictionary instead of a list
         if num_best == -1:
