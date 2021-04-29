@@ -26,8 +26,71 @@ class TradingAlgorithms:
         end = random.randint(start + min_range, len(prices) - 1)
         return prices[start:end]
 
+
+class BollingerBands(TradingAlgorithms):
     @staticmethod
-    def simple_moving_average(prices, log_buy_sell=False, log_res=True):
+    def simulate(prices, days=5, percent_diff=5, log_buy_sell=False, log_res=True):
+        """
+        Purpose:
+            - Performs the Bollinger Bands algorithm on a stock using a 5 day
+            moving average
+        Inputs:
+            - prices: a list of prices to run the method on
+            - days: The number of days used to calculate the average
+            - percent_diff: The percent difference to compare to the mean average
+                ex: A price difference of +/- 5% would be input as percent_diff=5
+            - log_buy_sell: prints to the console what price you bought and sold with
+                            default=False
+            - log_res: whether to print all buys and sells to the console
+                    default=True
+        Returns:
+            - total_profit: The total profit made using this strategy
+            - final_percentage: The percentage gain or loss using this strategy
+        """
+
+        i = 0
+        buy = 0
+        total_profit = 0
+        first_buy = 0
+        diff = percent_diff * 0.01
+        for price in prices:
+            if i >= days:
+                moving_average = sum(prices[i - days : i - 1]) / days
+                # bollinger bands logic
+                if price > moving_average * (1 - diff) and buy == 0:
+                    # buy
+                    if log_buy_sell:
+                        print(f"Buying at: ${price}")
+                    buy = price
+                    if first_buy == 0:
+                        first_buy = price
+                elif price < moving_average * (1 + diff) and buy != 0:
+                    # sell
+                    if log_buy_sell:
+                        print(f"Selling at: ${price}")
+                        print(f"Trade Profit: ${price - buy}")
+                    total_profit += price - buy
+                    buy = 0
+            i += 1
+
+        final_percentage = (total_profit / first_buy) * 100 if first_buy else 0
+
+        if log_res:
+            if log_buy_sell:
+                print("---------------------------")
+            if first_buy:
+                print(f"First Buy: ${round(first_buy, 2)}")
+            else:
+                print("First Buy: N/A")
+            print(f"Total Profit: ${round(total_profit, 2)}")
+            print(f"Final Percentage: {round(final_percentage, 2)}%")
+
+        return total_profit, final_percentage, final_percentage
+
+
+class SimpleMovingAverage(TradingAlgorithms):
+    @staticmethod
+    def simulate(prices, log_buy_sell=False, log_res=True):
         """
         Purpose:
             - Performs the mean reversion algorithm on a stock using a 5 day
@@ -47,7 +110,7 @@ class TradingAlgorithms:
         buy = 0
         total_profit = 0
         first_buy = 0
-        for p in prices:
+        for price in prices:
             if i >= 5:
                 moving_average = (
                     prices[i - 1]
@@ -57,39 +120,40 @@ class TradingAlgorithms:
                     + prices[i - 5]
                 ) / 5
                 # simple moving average logic, not mean
-                if p > moving_average and buy == 0:
+                if price > moving_average and buy == 0:
                     # buy
                     if log_buy_sell:
-                        print(f"Buying at: ${p}")
-                    buy = p
+                        print(f"Buying at: ${price}")
+                    buy = price
                     if first_buy == 0:
-                        first_buy = p
-                elif p < moving_average and buy != 0:
+                        first_buy = price
+                elif price < moving_average and buy != 0:
                     # sell
                     if log_buy_sell:
-                        print(f"Selling at: ${p}")
-                        print(f"Trade Profit: ${p - buy}")
-                    total_profit += p - buy
+                        print(f"Selling at: ${price}")
+                        print(f"Trade Profit: ${price - buy}")
+                    total_profit += price - buy
                     buy = 0
             i += 1
 
-        final_percentage = (total_profit / first_buy) * 100
+        final_percentage = (total_profit / first_buy) * 100 if first_buy else 0
 
         if log_res:
             if log_buy_sell:
                 print("---------------------------")
-            print(f"First Buy: ${round(first_buy, 2)}")
+            if first_buy:
+                print(f"First Buy: ${round(first_buy, 2)}")
+            else:
+                print("First Buy: N/A")
             print(f"Total Profit: ${round(total_profit, 2)}")
             print(f"Final Percentage: {round(final_percentage, 2)}%")
 
-        return total_profit, final_percentage
+        return total_profit, final_percentage, first_buy
 
 
 class MeanReversion(TradingAlgorithms):
     @staticmethod
-    def mean_reversion(
-        prices, days=5, percent_diff=5, log_buy_sell=False, log_res=False
-    ):
+    def simulate(prices, days=5, percent_diff=5, log_buy_sell=False, log_res=False):
         """
         Purpose:
             - Performs the mean reversion algorithm on a stock using a 5 day
@@ -152,7 +216,10 @@ class MeanReversion(TradingAlgorithms):
         if log_res:
             if log_buy_sell:
                 print("---------------------------")
-            print(f"First Buy:          {round(first_buy, 2)}")
+            if first_buy:
+                print(f"First Buy: ${round(first_buy, 2)}")
+            else:
+                print("First Buy: N/A")
             print(f"Total Profit:       {round(profit, 2)}")
             print(f"Percentage Returns: {round(return_percentage, 2)}%")
 
@@ -207,9 +274,7 @@ class MeanReversion(TradingAlgorithms):
                         total_profit,
                         final_percentage,
                         starting_price,
-                    ) = MeanReversion.mean_reversion(
-                        prices, days=days, percent_diff=diff
-                    )
+                    ) = MeanReversion.simulate(prices, days=days, percent_diff=diff)
 
                     best_days_dict[f"{days}_days_{diff}_diff{extra_label}"] = {
                         "total_profit": total_profit,

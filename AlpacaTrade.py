@@ -1,3 +1,5 @@
+import datetime
+
 import alpaca_trade_api as tradeapi
 
 from local_settings import url, public_key, secret_key
@@ -10,20 +12,20 @@ class AlpacaTrade:
             api = tradeapi.REST(public_key, secret_key, url)
             if not api:
                 print("Request could not be completed: authentication invalid")
-                return None
+                raise Exception
 
             account = api.get_account()
             if not account:
                 print("Request could not be completed: error retrieving account")
-                return None
+                raise Exception
             if account.trading_blocked:
                 print("Request could not be completed: trading blocked")
-                return None
+                raise Exception
 
             return api, account
         except:
             print("Authentication Failed")
-            return None, None
+            raise Exception
 
     @staticmethod
     def __check_buy__(api, account, symbol, shares, price):
@@ -152,7 +154,7 @@ class AlpacaTrade:
                 h - high
                 l - low
                 o - open
-                t - ?
+                t - Date
                 v - ?
         Returns: The price categories specified in the "to_return" variable over the
             specified range
@@ -168,16 +170,19 @@ class AlpacaTrade:
 
         prices = api.get_barset(symbol, time_between, limit=limit)[symbol]._raw
 
+        for price in prices:
+            price["t"] = datetime.datetime.fromtimestamp(price["t"])
+
         if len(to_return) == 1:
             to_return = to_return.pop()
             prices = [price[to_return] for price in prices]
         else:
-            to_remove = {"c", "h", "l", "o" "t", "v"}
+            to_remove = {"c", "h", "l", "o", "t", "v"}
             for item in to_return:
                 to_remove.remove(item)
 
             for price in prices:
                 for item in to_remove:
-                    prices[price].remove(item)
+                    price.remove(item)
 
         return prices
