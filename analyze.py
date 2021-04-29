@@ -4,6 +4,8 @@ import pathlib
 from AlpacaTrade import AlpacaTrade
 from TradingAlgorithms import BollingerBands, MeanReversion, SimpleMovingAverage
 
+# TODO: Implament short selling
+
 # Static vars
 YEAR_OF_STOCKS = 252  # How many days the stock market is open a year
 DP_MEANINGS = {
@@ -43,15 +45,15 @@ def float_range(start=0, stop=1, step=1):
 tickers = {
     "AAPL": {},
     "ADBE": {},
-    "APHA": {},
-    "GOOG": {},
-    "IWM": {},
-    "JNJ": {},
-    "LNVGY": {},
-    "PG": {},
-    "SINT": {},
-    "SPY": {},
-    "VISL": {},
+    # "APHA": {},
+    # "GOOG": {},
+    # "IWM": {},
+    # "JNJ": {},
+    # "LNVGY": {},
+    # "PG": {},
+    # "SINT": {},
+    # "SPY": {},
+    # "VISL": {},
 }
 
 for ticker in tickers:
@@ -95,6 +97,30 @@ for ticker in tickers:
         "total_profit": bb_total_profit,
         "final_percentage": bb_final_percentage,
     }
+
+# Show best stock in results.json
+best = {}
+
+max_bb_ticker = max(
+    tickers, key=lambda t: float(tickers[t]["bollinger_bands"]["total_profit"])
+)
+best["bollinger_bands"] = tickers[max_bb_ticker]["bollinger_bands"]
+best["bollinger_bands"]["ticker"] = max_bb_ticker
+
+max_mr_ticker = max(
+    tickers, key=lambda t: float(tickers[t]["mean_revursion"]["total_profit"])
+)
+best["mean_revursion"] = tickers[max_mr_ticker]["mean_revursion"]
+best["mean_revursion"]["ticker"] = max_mr_ticker
+
+max_sma_ticker = max(
+    tickers,
+    key=lambda t: float(tickers[t]["simple_moving_average"]["total_profit"]),
+)
+best["simple_moving_average"] = tickers[max_sma_ticker]["simple_moving_average"]
+best["simple_moving_average"]["ticker"] = max_sma_ticker
+
+tickers["best"] = best
 
 # Save the results to a json file
 save_results(tickers, file_name="results.json")
