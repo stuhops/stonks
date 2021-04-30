@@ -69,33 +69,42 @@ class BollingerBands(TradingAlgorithms):
                 # If we haven't bought whether or not we shorted we should buy
                 if price > moving_average * (1 - diff) and not buy:
                     # buy
-                    if log_buy_sell:
-                        print(f"Buying at:        ${round(price, 2)}")
-
-                    # If we shorted the stock then add to price but don't set buy
-                    if sell:
-                        total_profit += sell - price
-                        if log_buy_sell:
-                            print(f"Trade Profit:     ${round(sell - price, 2)}")
-                        sell = None
+                    if i == len(prices) - 1:
+                        print(f"You should buy this stock today")
                     else:
-                        buy = price
+                        if log_buy_sell:
+                            print(f"Buying at:        ${round(price, 2)}")
 
-                    if not first_buy:
-                        first_buy = price
+                        # If we shorted the stock then add to price but don't set buy
+                        if sell:
+                            total_profit += sell - price
+                            if log_buy_sell:
+                                print(f"Trade Profit:     ${round(sell - price, 2)}")
+                            sell = None
+                        else:
+                            buy = price
+
+                        if not first_buy:
+                            first_buy = price
                 elif price < moving_average * (1 + diff):
                     if buy:
                         # sell
-                        if log_buy_sell:
-                            print(f"Selling at:       ${round(price, 2)}")
-                            print(f"Trade Profit:     ${round(price - buy, 2)}")
-                        total_profit += price - buy
-                        buy = 0
+                        if i == len(prices) - 1:
+                            print(f"You should sell this stock today")
+                        else:
+                            if log_buy_sell:
+                                print(f"Selling at:       ${round(price, 2)}")
+                                print(f"Trade Profit:     ${round(price - buy, 2)}")
+                            total_profit += price - buy
+                            buy = None
                     elif short and not sell:
                         # short
-                        if log_buy_sell:
-                            print(f"Short Selling at: ${round(price, 2)}")
-                        sell = price
+                        if i == len(prices) - 1:
+                            print(f"You should short sell this stock today")
+                        else:
+                            if log_buy_sell:
+                                print(f"Short Selling at: ${round(price, 2)}")
+                            sell = price
                     else:
                         # Do nothing if no buy nor short selling
                         pass
@@ -154,33 +163,42 @@ class SimpleMovingAverage(TradingAlgorithms):
                 # If we haven't bought whether or not we shorted we should buy
                 if price > moving_average and not buy:
                     # buy
-                    if log_buy_sell:
-                        print(f"Buying at:       ${round(price, 2)}")
-
-                    # If we shorted the stock then add to price but don't set buy
-                    if sell:
-                        total_profit += sell - price
-                        if log_buy_sell:
-                            print(f"Trade Profit:    ${round(sell - price, 2)}")
-                        sell = None
+                    if i == len(prices) - 1:
+                        print(f"You should buy this stock today")
                     else:
-                        buy = price
+                        if log_buy_sell:
+                            print(f"Buying at:       ${round(price, 2)}")
 
-                    if not first_buy:
-                        first_buy = price
+                        # If we shorted the stock then add to price but don't set buy
+                        if sell:
+                            total_profit += sell - price
+                            if log_buy_sell:
+                                print(f"Trade Profit:    ${round(sell - price, 2)}")
+                            sell = None
+                        else:
+                            buy = price
+
+                        if not first_buy:
+                            first_buy = price
                 elif price < moving_average:
                     if buy:
                         # sell
-                        if log_buy_sell:
-                            print(f"Selling at:      ${round(price, 2)}")
-                            print(f"Trade Profit:    ${round(price - buy, 2)}")
-                        total_profit += price - buy
-                        buy = None
+                        if i == len(prices) - 1:
+                            print(f"You should sell this stock today")
+                        else:
+                            if log_buy_sell:
+                                print(f"Selling at:      ${round(price, 2)}")
+                                print(f"Trade Profit:    ${round(price - buy, 2)}")
+                            total_profit += price - buy
+                            buy = None
                     elif short and not sell:
                         # short
-                        if log_buy_sell:
-                            print(f"Short Selling at ${round(price, 2)}")
-                        sell = price
+                        if i == len(prices) - 1:
+                            print(f"You should short sell this stock today")
+                        else:
+                            if log_buy_sell:
+                                print(f"Short Selling at ${round(price, 2)}")
+                            sell = price
                     else:
                         # Do nothing if no buy nor short selling
                         pass
@@ -236,6 +254,7 @@ class MeanReversion(TradingAlgorithms):
         diff = percent_diff * 0.01  # we want it in a decimal percent
 
         # Loop through each line in the file
+        i = 0
         for price in prices:
             curr_price = round(price, 2)  # to round the price to 2 decimals
             prev_avg = MeanReversion.__list_avg__(working_list)
@@ -246,44 +265,59 @@ class MeanReversion(TradingAlgorithms):
                 if curr_price > prev_avg * (1 + diff):
                     # Sell
                     if buy:
-                        profit += curr_price - buy
-                        if log_buy_sell:
-                            print(f"Selling at:       ${round(curr_price, 2)}")
-                            print(f"Trade Profit:     ${round(curr_price - buy, 2)}")
-                        buy = None
+                        if i == len(prices) - 1:
+                            print(f"You should sell this stock today")
+                        else:
+                            profit += curr_price - buy
+                            if log_buy_sell:
+                                print(f"Selling at:       ${round(curr_price, 2)}")
+                                print(
+                                    f"Trade Profit:     ${round(curr_price - buy, 2)}"
+                                )
+                            buy = None
                     # Sell short
                     elif short and not sell:
-                        sell = curr_price
-                        if log_buy_sell:
-                            print(f"Short Selling at: ${round(curr_price, 2)}")
+                        if i == len(prices) - 1:
+                            print(f"You should short sell this stock today")
+                        else:
+                            sell = curr_price
+                            if log_buy_sell:
+                                print(f"Short Selling at: ${round(curr_price, 2)}")
 
                 elif curr_price < prev_avg * (1 - diff):
                     # Buy the short back
-                    if short and sell:
-                        profit += sell - curr_price
-                        if log_buy_sell:
-                            print(f"Buying at:        ${round(curr_price, 2)}")
-                            print(f"Trade Profit:     ${round(sell - curr_price, 2)}")
-                        if not first_buy:
-                            first_buy = curr_price
+                    if i == len(prices) - 1:
+                        print(f"You should buy this stock today")
+                    else:
+                        if short and sell:
+                            profit += sell - curr_price
                             if log_buy_sell:
-                                print(f"First Buy:        ${round(curr_price, 2)}")
-                        sell = None
+                                print(f"Buying at:        ${round(curr_price, 2)}")
+                                print(
+                                    f"Trade Profit:     ${round(sell - curr_price, 2)}"
+                                )
+                            if not first_buy:
+                                first_buy = curr_price
+                                if log_buy_sell:
+                                    print(f"First Buy:        ${round(curr_price, 2)}")
+                            sell = None
 
-                    elif not buy:
-                        buy = curr_price
-                        if log_buy_sell:
-                            print(f"Buying at:        ${round(curr_price, 2)}")
-
-                        if not first_buy:
-                            first_buy = curr_price
+                        elif not buy:
+                            buy = curr_price
                             if log_buy_sell:
-                                print(f"First Buy:        ${round(curr_price, 2)}")
+                                print(f"Buying at:        ${round(curr_price, 2)}")
+
+                            if not first_buy:
+                                first_buy = curr_price
+                                if log_buy_sell:
+                                    print(f"First Buy:        ${round(curr_price, 2)}")
 
             # Add the curr_price to the working average list
             working_list.append(curr_price)
             if len(working_list) > days:
                 working_list.pop(0)
+
+            i += 1
 
         return_percentage = 100 * profit / first_buy if first_buy else 0
 

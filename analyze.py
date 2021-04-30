@@ -83,6 +83,7 @@ for ticker in tickers:
     bb_total_profit, bb_final_percentage, _ = BollingerBands.simulate(
         prices, short=True, log_buy_sell=True, log_res=True
     )
+    print()
 
     # Record the results to the dictionary
     tickers[ticker]["simple_moving_average"] = {
