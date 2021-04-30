@@ -45,15 +45,15 @@ def float_range(start=0, stop=1, step=1):
 tickers = {
     "AAPL": {},
     "ADBE": {},
-    # "APHA": {},
-    # "GOOG": {},
-    # "IWM": {},
-    # "JNJ": {},
-    # "LNVGY": {},
-    # "PG": {},
-    # "SINT": {},
-    # "SPY": {},
-    # "VISL": {},
+    "APHA": {},
+    "GOOG": {},
+    "IWM": {},
+    "JNJ": {},
+    "LNVGY": {},
+    "PG": {},
+    "SINT": {},
+    "SPY": {},
+    "VISL": {},
 }
 
 for ticker in tickers:
@@ -71,17 +71,17 @@ for ticker in tickers:
     # Perform the simple moving average functions
     print(f"***{ticker} Moving Average Strategy Output***")
     sma_total_profit, sma_final_percentage, _ = SimpleMovingAverage.simulate(
-        prices, log_res=True
+        prices, short=True, log_buy_sell=True, log_res=True
     )
     # Perform the mean revursion
     print(f"\n***{ticker} Mean Reversion Strategy Output***")
     mr_total_profit, mr_final_percentage, _ = MeanReversion.simulate(
-        prices, log_res=True
+        prices, short=True, log_buy_sell=True, log_res=True
     )
     # Perform the bollinger bands
     print(f"\n***{ticker} Bollinger Bands Strategy Output***")
     bb_total_profit, bb_final_percentage, _ = BollingerBands.simulate(
-        prices, log_res=True
+        prices, short=True, log_buy_sell=True, log_res=True
     )
 
     # Record the results to the dictionary
@@ -102,20 +102,20 @@ for ticker in tickers:
 best = {}
 
 max_bb_ticker = max(
-    tickers, key=lambda t: float(tickers[t]["bollinger_bands"]["total_profit"])
+    tickers, key=lambda t: float(tickers[t]["bollinger_bands"]["final_percentage"])
 )
 best["bollinger_bands"] = tickers[max_bb_ticker]["bollinger_bands"]
 best["bollinger_bands"]["ticker"] = max_bb_ticker
 
 max_mr_ticker = max(
-    tickers, key=lambda t: float(tickers[t]["mean_revursion"]["total_profit"])
+    tickers, key=lambda t: float(tickers[t]["mean_revursion"]["final_percentage"])
 )
 best["mean_revursion"] = tickers[max_mr_ticker]["mean_revursion"]
 best["mean_revursion"]["ticker"] = max_mr_ticker
 
 max_sma_ticker = max(
     tickers,
-    key=lambda t: float(tickers[t]["simple_moving_average"]["total_profit"]),
+    key=lambda t: float(tickers[t]["simple_moving_average"]["final_percentage"]),
 )
 best["simple_moving_average"] = tickers[max_sma_ticker]["simple_moving_average"]
 best["simple_moving_average"]["ticker"] = max_sma_ticker

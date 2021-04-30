@@ -29,7 +29,14 @@ class TradingAlgorithms:
 
 class BollingerBands(TradingAlgorithms):
     @staticmethod
-    def simulate(prices, days=5, percent_diff=5, log_buy_sell=False, log_res=True):
+    def simulate(
+        prices,
+        days=5,
+        percent_diff=5,
+        short=False,
+        log_buy_sell=False,
+        log_res=True,
+    ):
         """
         Purpose:
             - Performs the Bollinger Bands algorithm on a stock using a 5 day
@@ -39,38 +46,59 @@ class BollingerBands(TradingAlgorithms):
             - days: The number of days used to calculate the average
             - percent_diff: The percent difference to compare to the mean average
                 ex: A price difference of +/- 5% would be input as percent_diff=5
+            - short: Whether the simulation is allowed to sell short (sell before you
+                buy); default=False
             - log_buy_sell: prints to the console what price you bought and sold with
-                            default=False
+                default=False
             - log_res: whether to print all buys and sells to the console
-                    default=True
+                default=True
         Returns:
             - total_profit: The total profit made using this strategy
             - final_percentage: The percentage gain or loss using this strategy
         """
 
         i = 0
-        buy = 0
+        sell, buy = None, None
         total_profit = 0
-        first_buy = 0
+        first_buy = None
         diff = percent_diff * 0.01
         for price in prices:
             if i >= days:
                 moving_average = sum(prices[i - days : i - 1]) / days
                 # bollinger bands logic
-                if price > moving_average * (1 - diff) and buy == 0:
+                # If we haven't bought whether or not we shorted we should buy
+                if price > moving_average * (1 - diff) and not buy:
                     # buy
                     if log_buy_sell:
-                        print(f"Buying at: ${price}")
-                    buy = price
-                    if first_buy == 0:
+                        print(f"Buying at:        ${round(price, 2)}")
+
+                    # If we shorted the stock then add to price but don't set buy
+                    if sell:
+                        total_profit += sell - price
+                        if log_buy_sell:
+                            print(f"Trade Profit:     ${round(sell - price, 2)}")
+                        sell = None
+                    else:
+                        buy = price
+
+                    if not first_buy:
                         first_buy = price
-                elif price < moving_average * (1 + diff) and buy != 0:
-                    # sell
-                    if log_buy_sell:
-                        print(f"Selling at: ${price}")
-                        print(f"Trade Profit: ${price - buy}")
-                    total_profit += price - buy
-                    buy = 0
+                elif price < moving_average * (1 + diff):
+                    if buy:
+                        # sell
+                        if log_buy_sell:
+                            print(f"Selling at:       ${round(price, 2)}")
+                            print(f"Trade Profit:     ${round(price - buy, 2)}")
+                        total_profit += price - buy
+                        buy = 0
+                    elif short and not sell:
+                        # short
+                        if log_buy_sell:
+                            print(f"Short Selling at: ${round(price, 2)}")
+                        sell = price
+                    else:
+                        # Do nothing if no buy nor short selling
+                        pass
             i += 1
 
         final_percentage = (total_profit / first_buy) * 100 if first_buy else 0
@@ -90,50 +118,72 @@ class BollingerBands(TradingAlgorithms):
 
 class SimpleMovingAverage(TradingAlgorithms):
     @staticmethod
-    def simulate(prices, log_buy_sell=False, log_res=True):
+    def simulate(
+        prices,
+        days=5,
+        short=False,
+        log_buy_sell=False,
+        log_res=True,
+    ):
         """
         Purpose:
-            - Performs the mean reversion algorithm on a stock using a 5 day
+            - Performs the Bollinger Bands algorithm on a stock using a 5 day
             moving average
         Inputs:
             - prices: a list of prices to run the method on
+            - days: The number of days used to calculate the average
+            - short: Whether the simulation is allowed to sell short (sell before you
+                buy); default=False
             - log_buy_sell: prints to the console what price you bought and sold with
-                            default=False
+                default=False
             - log_res: whether to print all buys and sells to the console
-                    default=True
+                default=True
         Returns:
             - total_profit: The total profit made using this strategy
             - final_percentage: The percentage gain or loss using this strategy
         """
 
         i = 0
-        buy = 0
+        sell, buy = None, None
         total_profit = 0
-        first_buy = 0
+        first_buy = None
         for price in prices:
-            if i >= 5:
-                moving_average = (
-                    prices[i - 1]
-                    + prices[i - 2]
-                    + prices[i - 3]
-                    + prices[i - 4]
-                    + prices[i - 5]
-                ) / 5
-                # simple moving average logic, not mean
-                if price > moving_average and buy == 0:
+            if i >= days:
+                moving_average = sum(prices[i - days : i - 1]) / days
+                # Simple moving average logic
+                # If we haven't bought whether or not we shorted we should buy
+                if price > moving_average and not buy:
                     # buy
                     if log_buy_sell:
-                        print(f"Buying at: ${price}")
-                    buy = price
-                    if first_buy == 0:
+                        print(f"Buying at:       ${round(price, 2)}")
+
+                    # If we shorted the stock then add to price but don't set buy
+                    if sell:
+                        total_profit += sell - price
+                        if log_buy_sell:
+                            print(f"Trade Profit:    ${round(sell - price, 2)}")
+                        sell = None
+                    else:
+                        buy = price
+
+                    if not first_buy:
                         first_buy = price
-                elif price < moving_average and buy != 0:
-                    # sell
-                    if log_buy_sell:
-                        print(f"Selling at: ${price}")
-                        print(f"Trade Profit: ${price - buy}")
-                    total_profit += price - buy
-                    buy = 0
+                elif price < moving_average:
+                    if buy:
+                        # sell
+                        if log_buy_sell:
+                            print(f"Selling at:      ${round(price, 2)}")
+                            print(f"Trade Profit:    ${round(price - buy, 2)}")
+                        total_profit += price - buy
+                        buy = None
+                    elif short and not sell:
+                        # short
+                        if log_buy_sell:
+                            print(f"Short Selling at ${round(price, 2)}")
+                        sell = price
+                    else:
+                        # Do nothing if no buy nor short selling
+                        pass
             i += 1
 
         final_percentage = (total_profit / first_buy) * 100 if first_buy else 0
@@ -148,12 +198,14 @@ class SimpleMovingAverage(TradingAlgorithms):
             print(f"Total Profit: ${round(total_profit, 2)}")
             print(f"Final Percentage: {round(final_percentage, 2)}%")
 
-        return total_profit, final_percentage, first_buy
+        return total_profit, final_percentage, final_percentage
 
 
 class MeanReversion(TradingAlgorithms):
     @staticmethod
-    def simulate(prices, days=5, percent_diff=5, log_buy_sell=False, log_res=False):
+    def simulate(
+        prices, days=5, percent_diff=5, short=False, log_buy_sell=False, log_res=False
+    ):
         """
         Purpose:
             - Performs the mean reversion algorithm on a stock using a 5 day
@@ -163,6 +215,8 @@ class MeanReversion(TradingAlgorithms):
             - days: The number of days used to calculate the average
             - percent_diff: The percent difference to compare to the mean average
                 ex: A price difference of +/- 5% would be input as percent_diff=5
+            - short: Whether the simulation is allowed to sell short (sell before you
+                buy); default=False
             - log_buy_sell: prints to the console what price you bought and sold with
               default=False
             - log_res: whether to print all buys and sells to the console
@@ -177,7 +231,7 @@ class MeanReversion(TradingAlgorithms):
         working_list = []
         prev_avg = 0
         profit = 0
-        last_buy = None
+        sell, buy = None, None
         first_buy = None
         diff = percent_diff * 0.01  # we want it in a decimal percent
 
@@ -189,21 +243,42 @@ class MeanReversion(TradingAlgorithms):
             # Only check if we should buy if we have at 5 elements
             if len(working_list) == days:
                 # If the price is +/- percent_diff from the moving average do something
-                if curr_price > prev_avg * (1 + diff) and last_buy:
-                    profit += curr_price - last_buy
-                    if log_buy_sell:
-                        print(f"Selling at:   {round(curr_price, 2)}")
-                        print(f"Trade Profit: {round(curr_price - last_buy, 2)}")
-                    last_buy = None
-                elif curr_price < prev_avg * (1 - diff) and not last_buy:
-                    last_buy = curr_price
-                    if log_buy_sell:
-                        print(f"Buying at:    {round(curr_price, 2)}")
-
-                    if not first_buy:
-                        first_buy = curr_price
+                if curr_price > prev_avg * (1 + diff):
+                    # Sell
+                    if buy:
+                        profit += curr_price - buy
                         if log_buy_sell:
-                            print(f"First Buy:    {round(curr_price, 2)}")
+                            print(f"Selling at:       ${round(curr_price, 2)}")
+                            print(f"Trade Profit:     ${round(curr_price - buy, 2)}")
+                        buy = None
+                    # Sell short
+                    elif short and not sell:
+                        sell = curr_price
+                        if log_buy_sell:
+                            print(f"Short Selling at: ${round(curr_price, 2)}")
+
+                elif curr_price < prev_avg * (1 - diff):
+                    # Buy the short back
+                    if short and sell:
+                        profit += sell - curr_price
+                        if log_buy_sell:
+                            print(f"Buying at:        ${round(curr_price, 2)}")
+                            print(f"Trade Profit:     ${round(sell - curr_price, 2)}")
+                        if not first_buy:
+                            first_buy = curr_price
+                            if log_buy_sell:
+                                print(f"First Buy:        ${round(curr_price, 2)}")
+                        sell = None
+
+                    elif not buy:
+                        buy = curr_price
+                        if log_buy_sell:
+                            print(f"Buying at:        ${round(curr_price, 2)}")
+
+                        if not first_buy:
+                            first_buy = curr_price
+                            if log_buy_sell:
+                                print(f"First Buy:        ${round(curr_price, 2)}")
 
             # Add the curr_price to the working average list
             working_list.append(curr_price)
